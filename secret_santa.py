@@ -9,9 +9,18 @@ from email.mime.text import MIMEText
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from dotenv import load_dotenv
+from jinja2 import Template
 
 DEFAULT_CONFIG_FILE = "config.json"
 DEFAULT_HISTORY_DIR = "history"
+
+# Default email templates (Jinja2 syntax)
+DEFAULT_EMAIL_SUBJECT = "🎅 Secret Santa {{ year }}!"
+DEFAULT_EMAIL_BODY = """Hi {{ giver_names }},
+
+You are the Secret Santa for: {{ receiver_names }}!
+
+Merry Christmas! 🎄"""
 
 # ------------------ Load & Save History ------------------
 def load_history(history_dir: str):
@@ -116,6 +125,12 @@ def find_assignments(members, candidates):
         pairs.append((givers[i], receivers[j]))
     return pairs
 
+# ------------------ Template Rendering ------------------
+def render_template(template_string, variables):
+    """Render Jinja2 template with variables."""
+    template = Template(template_string)
+    return template.render(**variables)
+
 # ------------------ Email Handling ------------------
 def send_email(smtp_server, smtp_port, smtp_user, smtp_password, to_email, subject, body):
     msg = MIMEText(body)
@@ -141,7 +156,15 @@ def main():
         print(f"Missing config file: {args.config}")
         return
     with open(args.config, "r") as f:
-        members = json.load(f)
+        config_data = json.load(f)
+    
+    members = config_data.get("members", [])
+    if "email_templates" in config_data:
+        email_subject = config_data["email_templates"].get("subject", DEFAULT_EMAIL_SUBJECT)
+        email_body = config_data["email_templates"].get("body", DEFAULT_EMAIL_BODY)
+    else:
+        email_subject = DEFAULT_EMAIL_SUBJECT
+        email_body = DEFAULT_EMAIL_BODY
 
     history = load_history(args.history_dir)
 
@@ -180,11 +203,21 @@ def main():
     for giver, receiver in assignments:
         giver_member = next(m for m in members if tuple(sorted(m["group"])) == giver)
         to_email = giver_member["email"]
-        subject = f"Secret Santa {year}!"
-        body = f"Hi {', '.join(giver)},\n\nYou are the Secret Santa for: {', '.join(receiver)}!\n\nMerry Christmas 🎅!"
+        
+        template_vars = {
+            'year': year,
+            'giver_names': ', '.join(giver),
+            'receiver_names': ', '.join(receiver)
+        }
+        
+        # Render templates
+        subject = render_template(email_subject, template_vars)
+        body = render_template(email_body, template_vars)
 
         if args.dry_run:
-            print(f"[DRY RUN] Email to {to_email}: {body}")
+            print(f"[DRY RUN] Email to {to_email}:")
+            print(f"Subject: {subject}")
+            print(f"Body:\n{body}\n")
         else:
             # Load environment variables from .env file
             load_dotenv()

@@ -52,32 +52,47 @@ cp .env.example .env
 
 ### Participant Configuration
 
-Create a JSON configuration file (e.g., `2025_config.json`) with participant information:
+Create a JSON configuration file (e.g., `2025_config.json`) with participant information (under "members") and optional email template override (under "email_templates"):
 
 ```json
-[
-  {
-    "group": ["John Doe"],
-    "email": "johndoe@gmail.com",
-    "exclude": ["Jane Smith", "Jannet Roe"]
+{
+  "email_templates": {
+    "subject": "🎅 Secret Santa {{ year }} - Your Assignment!",
+    "body": "Hi {{ giver_names }},\n\nYou are the Secret Santa for: {{ receiver_names }}!\n\nMerry Christmas and happy gift hunting! 🎄\n\nLove,\nThe Secret Santa Coordinator",
   },
-  {
-    "group": ["Richard Roe", "Jannet Roe"],
-    "email": "roefamily@yahoo.com",
-    "exclude": []
-  },
-  {
-    "group": ["Jane Smith"],
-    "email": "janesmith@msn.com",
-    "exclude": ["Richard Roe"]
-  }
-]
+  "members": [
+    {
+      "group": ["John Doe"],
+      "email": "johndoe@gmail.com",
+      "exclude": ["Jane Smith", "Jannet Roe"]
+    },
+    {
+      "group": ["Richard Roe", "Jannet Roe"],
+      "email": "roefamily@yahoo.com",
+      "exclude": []
+    },
+    {
+      "group": ["Jane Smith"],
+      "email": "janesmith@msn.com",
+      "exclude": ["Richard Roe"]
+    }
+  ]
+}
 ```
 
-**Configuration Fields:**
+**`members` Item Fields:**
 - `group`: Array of names in this participant unit (individual or couple / family)
 - `email`: Email address for notifications
 - `exclude`: Array of people this participant should not be assigned to. Everyone other group not mentioned here will be a candidate
+
+**`email_templates` Fields (Optional):**
+- `subject`: Custom email subject template.
+- `body`: Custom email body template.
+
+The system uses [Jinja2](https://jinja.palletsprojects.com/) for template rendering. The following variables are available for use in both templates:
+- `{{ year }}`: The current year
+- `{{ giver_names }}`: Comma-separated list of giver names
+- `{{ receiver_names }}`: Comma-separated list of receiver names
 
 ### Email Configuration
 
