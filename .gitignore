@@ -3,5 +3,6 @@ history/*.json
 *_compromises.txt
 
 .DS_Store
+.env
 
 venv/

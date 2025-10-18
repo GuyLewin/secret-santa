@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from dotenv import load_dotenv
 
 DEFAULT_CONFIG_FILE = "config.json"
 DEFAULT_HISTORY_DIR = "history"
@@ -185,7 +186,18 @@ def main():
         if args.dry_run:
             print(f"[DRY RUN] Email to {to_email}: {body}")
         else:
-            send_email("smtp.gmail.com", 587, "<username here>", "<password here>", to_email, subject, body)
+            # Load environment variables from .env file
+            load_dotenv()
+            smtp_host = os.getenv('SMTP_HOST')
+            smtp_port = int(os.getenv('SMTP_PORT'))
+            smtp_user = os.getenv('SMTP_USER')
+            smtp_password = os.getenv('SMTP_PASSWORD')
+            
+            if not smtp_host or not smtp_port or not smtp_user or not smtp_password:
+                print("Error: SMTP settings not found in .env file")
+                return
+            
+            send_email(smtp_host, smtp_port, smtp_user, smtp_password, to_email, subject, body)
             print(f"Sent to {to_email}")
 
 if __name__ == "__main__":
