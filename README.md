@@ -118,7 +118,6 @@ SMTP_PASSWORD=your-app-password
 - **Gmail**: `smtp.gmail.com:587` (you may need to use an App Password instead of your regular password: https://support.google.com/accounts/answer/185833)
 - **Outlook/Hotmail**: `smtp-mail.outlook.com:587`
 - **Yahoo**: `smtp.mail.yahoo.com:587`
-- **Custom SMTP**: Use your provider's SMTP settings
 
 ## Usage
 
@@ -131,14 +130,25 @@ python secret_santa.py --config 2025_config.json
 
 ### Command Line Options
 
-- `--dry-run`: Print assignments without sending emails
+- `--dry-run`: Print assignments without saving into history
 - `--config CONFIG`: Path to participant configuration file (default: `config.json`)
 - `--history-dir HISTORY_DIR`: Path to history directory (default: `history`)
 - `--year YEAR`: Year to assign (default: current year)
+- `--output {email,console}`: Output method - 'console' for simple console output (default), 'email' for email notifications
 
 ### Examples
 
-**Test assignments without sending emails:**
+**Simple console output (default, no emails):**
+```bash
+python secret_santa.py --config 2025_config.json
+```
+
+**Email notifications:**
+```bash
+python secret_santa.py --config 2025_config.json --output email
+```
+
+**Test assignments without saving into history, printing to console:**
 ```bash
 python secret_santa.py --config 2025_config.json --dry-run
 ```
@@ -153,10 +163,25 @@ python secret_santa.py --config 2025_config.json --history-dir my_history
 ### Successful Assignment
 The system will:
 1. Generate optimal assignments using the Hungarian algorithm
-2. Save assignments to `history/YEAR.json`
-3. Send email notifications to all participants
+2. Save assignments to `history/YEAR.json` (unless using `--dry-run`)
+3. Output assignments based on the `--output` method:
+   - **Console mode** (default): Print simple assignment lines in format `Giver -> Receiver`
+   - **Email mode**: Send email notifications to all participants
 4. Report any compromises (unavoidable repeat assignments)
-If not running in dry-run (`--dry-run`), the assignments will not be printed, to allow the moderator to participate
+
+### Output Modes
+
+**Console Mode (`--output console` - Default):**
+- Prints simple assignment lines: `Giver Name -> Receiver Name`
+- No email configuration required
+- Perfect for quick viewing or manual distribution
+- Works with or without `--dry-run` flag
+
+**Email Mode (`--output email`):**
+- Sends personalized email notifications to each participant
+- Uses Jinja2 templates for customizable subject and body
+- Requires SMTP configuration in `.env` file
+- In dry-run mode, prints email content instead of sending
 
 ### Compromise Reporting
 If repeat assignments are unavoidable, the system creates a detailed report:

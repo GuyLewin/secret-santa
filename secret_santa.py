@@ -150,6 +150,7 @@ def main():
     parser.add_argument("--config", type=str, default=DEFAULT_CONFIG_FILE, help="Path to config file")
     parser.add_argument("--history-dir", type=str, default=DEFAULT_HISTORY_DIR, help="Path to history directory")
     parser.add_argument("--year", type=int, default=datetime.now().year, help="Year to assign")
+    parser.add_argument("--output", type=str, choices=["email", "console"], default="console", help="Output method: 'console' for simple console output (default), 'email' for email notifications")
     args = parser.parse_args()
 
     if not os.path.isfile(args.config):
@@ -170,7 +171,7 @@ def main():
 
     year = args.year
     year_history_path = history_file_for_year(args.history_dir, year)
-    if os.path.exists(year_history_path):
+    if os.path.exists(year_history_path) and not args.dry_run:
         print(f"Assignments for year {year} already exist! Delete {year_history_path} to re-run or change year via --year.")
         return
 
@@ -181,7 +182,10 @@ def main():
         print("No valid assignment found! Try adjusting constraints.")
         return
 
-    save_history(args.history_dir, year, assignments)
+    if args.dry_run:
+        print("[DRY RUN] Not saving history for year {year}.")
+    else:
+        save_history(args.history_dir, year, assignments)
 
     # Print compromises
     compromises = []
@@ -199,39 +203,47 @@ def main():
     else:
         print("No compromises made, everyone is a new match!")
 
-    # Notify everyone
-    for giver, receiver in assignments:
-        giver_member = next(m for m in members if tuple(sorted(m["group"])) == giver)
-        to_email = giver_member["email"]
-        
-        template_vars = {
-            'year': year,
-            'giver_names': ', '.join(giver),
-            'receiver_names': ', '.join(receiver)
-        }
-        
-        # Render templates
-        subject = render_template(email_subject, template_vars)
-        body = render_template(email_body, template_vars)
+    # Output assignments based on selected method
+    if args.output == "console":
+        # Simple console output - one line per assignment
+        for giver, receiver in assignments:
+            print(f"{', '.join(giver)} -> {', '.join(receiver)}")
+    elif args.output == "email":
+        # Email notifications
+        for giver, receiver in assignments:
+            giver_member = next(m for m in members if tuple(sorted(m["group"])) == giver)
+            to_email = giver_member["email"]
+            
+            template_vars = {
+                'year': year,
+                'giver_names': ', '.join(giver),
+                'receiver_names': ', '.join(receiver)
+            }
+            
+            # Render templates
+            subject = render_template(email_subject, template_vars)
+            body = render_template(email_body, template_vars)
 
-        if args.dry_run:
-            print(f"[DRY RUN] Email to {to_email}:")
-            print(f"Subject: {subject}")
-            print(f"Body:\n{body}\n")
-        else:
-            # Load environment variables from .env file
-            load_dotenv()
-            smtp_host = os.getenv('SMTP_HOST')
-            smtp_port = int(os.getenv('SMTP_PORT'))
-            smtp_user = os.getenv('SMTP_USER')
-            smtp_password = os.getenv('SMTP_PASSWORD')
-            
-            if not smtp_host or not smtp_port or not smtp_user or not smtp_password:
-                print("Error: SMTP settings not found in .env file")
-                return
-            
-            send_email(smtp_host, smtp_port, smtp_user, smtp_password, to_email, subject, body)
-            print(f"Sent to {to_email}")
+            if args.dry_run:
+                print(f"[DRY RUN] Email to {to_email}:")
+                print(f"Subject: {subject}")
+                print(f"Body:\n{body}\n")
+            else:
+                # Load environment variables from .env file
+                load_dotenv()
+                smtp_host = os.getenv('SMTP_HOST')
+                smtp_port = int(os.getenv('SMTP_PORT'))
+                smtp_user = os.getenv('SMTP_USER')
+                smtp_password = os.getenv('SMTP_PASSWORD')
+                
+                if not smtp_host or not smtp_port or not smtp_user or not smtp_password:
+                    print("Error: SMTP settings not found in .env file")
+                    return
+                
+                send_email(smtp_host, smtp_port, smtp_user, smtp_password, to_email, subject, body)
+                print(f"Sent to {to_email}")
+    else:
+        raise ValueError(f"Invalid output method: {args.output}")
 
 if __name__ == "__main__":
     main()
