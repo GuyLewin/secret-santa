@@ -197,6 +197,25 @@ The system automatically maintains a complete history of all assignments:
 - **Year-based Files**: Each year's assignments are stored separately
 - **Cross-year Analysis**: Uses complete history for optimal assignment decisions
 
+### History File Format
+
+To manually add history of assignments from previous years, create a new history file in `history/YEAR.json` with the following format:
+
+```json
+{
+  "year": 2024,
+  "pairs": [
+    ["John Doe", "Jane Smith"],
+    ["Richard Roe", "Mike Johnson"],
+    ["Sarah Wilson", "Tom Brown"]
+  ]
+}
+```
+
+**Fields:**
+- `year`: The year of the assignments (integer)
+- `pairs`: Array of individual giver-receiver pairs, where each pair is an array `["Giver Name", "Receiver Name"]`. For groups - pairs are created per combination (e.g. `["Giver 1 Name", "Receiver Name"], ["Giver 2 Name", "Receiver Name"]`)
+
 ## Best Practices
 
 1. **Backup History**: Keep backups of your history directory
