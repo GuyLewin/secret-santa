@@ -68,7 +68,10 @@ def build_weighted_candidates(current_year, members, history):
     Otherwise, penalize for assignments by recency and amount.
     """
     past_assignments_to_year = defaultdict(list)
-    min_year = min(record["year"] for record in history["assignments"])
+    previous_years = [record["year"] for record in history["assignments"]]
+    if len(previous_years) == 0:
+        previous_years = [current_year]
+    min_year = min(previous_years)
     for record in history["assignments"]:
         y = record["year"]
         for giver, receiver in record["pairs"]:  # both tuples
@@ -104,7 +107,7 @@ def build_weighted_candidates(current_year, members, history):
     return candidates
 
 def find_assignments(members, candidates):
-    """Use Hungarian algorithm to minimize total weight."""
+    """Use Hungarian algorithm to minimize total weight with randomness to break ties."""
     givers = [tuple(sorted(m["group"])) for m in members]
     receivers = givers[:]
     n = len(givers)
@@ -117,10 +120,19 @@ def find_assignments(members, candidates):
             j = receivers.index(receiver)
             cost_matrix[i, j] = weight
 
+    # Add small random noise to break ties while preserving weight preferences
+    # Noise is in range [0, 0.5) which is small enough not to change weight ordering
+    # but large enough to break ties between assignments with the same weight
+    random_noise = np.random.uniform(0, 0.5, (n, n))
+    cost_matrix = np.where(cost_matrix < impossible_assignment_weight,
+                           cost_matrix + random_noise,
+                           cost_matrix)
+
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
     pairs = []
     for i, j in zip(row_ind, col_ind):
-        if cost_matrix[i, j] == impossible_assignment_weight:
+        # Check against original impossible weight (noise doesn't matter for this check)
+        if cost_matrix[i, j] >= impossible_assignment_weight:
             return None
         pairs.append((givers[i], receivers[j]))
     return pairs
