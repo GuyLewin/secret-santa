@@ -1,5 +1,5 @@
 *config.json
-history/*.json
+*history/*.json
 *_compromises.txt
 
 .DS_Store
