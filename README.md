@@ -58,7 +58,7 @@ Create a JSON configuration file (e.g., `2025_config.json`) with participant inf
 {
   "email_templates": {
     "subject": "🎅 Secret Santa {{ year }} - Your Assignment!",
-    "body": "Hi {{ giver_names }},\n\nYou are the Secret Santa for: {{ receiver_names }}!\n\nMerry Christmas and happy gift hunting! 🎄\n\nLove,\nThe Secret Santa Coordinator",
+    "body": "Hi {{ giver_names }},\n\nYou are the Secret Santa for: {{ receiver_names }}!\n\nMerry Christmas and happy gift hunting! 🎄\n\nLove,\nThe Secret Santa Coordinator"
   },
   "members": [
     {
